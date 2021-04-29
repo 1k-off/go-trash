@@ -1,0 +1,7 @@
+port: "9090"
+log_level: "debug"
+docker_network: "application"
+slack_webhook: "https://hooks.slack.com/services/"
+slack_username: "ip-changer"
+slack_channel: "project-notifications"
+token: "someSecureToken"

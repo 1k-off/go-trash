@@ -1,0 +1,26 @@
+[Unit]
+Description=Ip changer service
+ConditionPathExists=/opt/ip-changer
+After=network.target
+
+[Service]
+Type=simple
+
+Restart=always
+RestartSec=5s
+startLimitIntervalSec=60
+
+WorkingDirectory=/opt/ip-changer
+ExecStart=/opt/ip-changer/ip_changer
+
+# make sure log directory exists and owned by syslog
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/ip-changer
+ExecStartPre=/bin/chown syslog:adm /var/log/ip-changer
+ExecStartPre=/bin/chmod 755 /var/log/ip-changer
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=ip_changer
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+### Replace yq and iptables locations. You may use `which` command to find actual location.
+
+DockerNetwork="$1"
+NetplanConfigFile="/etc/netplan/01-netcfg.yaml"
+NetworkInterface="enp1s0f0"
+IgnoreIP="190.110.124.172"
+
+readarray -t IP_LIST < <(cat "$NetplanConfigFile" | /usr/local/bin/yq .network.ethernets.$NetworkInterface.addresses | awk -F\" 'NF>=3 {print $0}' | sed 's/^ *//g; s/"//g; s/\/.*$//g')
+MyIP_server="ifconfig.me"
+
+# Remove ignored IP
+for (( i=0; i<${#IP_LIST[@]}; i++ )); do
+    if [[ ${IP_LIST[i]} == $IgnoreIP ]]; then
+        IP_LIST=( "${IP_LIST[@]:0:$i}" "${IP_LIST[@]:$((i + 1))}" )
+        i=$((i - 1))
+    fi
+done
+# Rotate IPs
+nextIpNumber=0
+ipListLength=${#IP_LIST[@]}
+maxIpNumber=$((ipListLength - 1))
+
+function MainWorkflow() {
+    for index in "${!IP_LIST[@]}"; do
+        ip="$(docker run --rm --network application local/ip_checker sh -c 'curl -s ifconfig.me')"
+        if [[ "$ip" == "${IP_LIST[$index]}" ]]; then {
+            currentIpNumber="$index"
+        }
+        fi
+    done
+
+    if [[ $currentIpNumber -eq $maxIpNumber ]]; then {
+        nextIpNumber=0
+    } else {
+        nextIpNumber=$((currentIpNumber + 1))
+    }
+    fi
+
+    ruleNumber=$(/sbin/iptables -n -L POSTROUTING -t nat --line-numbers | grep SNAT | grep $DockerNetwork | awk {'print $1'})
+    /sbin/iptables -t nat -D POSTROUTING $ruleNumber
+    /sbin/iptables -t nat -I POSTROUTING -s $DockerNetwork ! -o application -j SNAT --to-source "${IP_LIST[$nextIpNumber]}"
+    message="${IP_LIST[$nextIpNumber]} ${IP_LIST[$currentIpNumber]}"
+    echo $message
+}
+
+MainWorkflow
