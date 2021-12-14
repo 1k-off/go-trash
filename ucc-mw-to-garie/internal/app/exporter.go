@@ -57,7 +57,7 @@ func GenerateGarieConfig(cron, garieConfigPath string, sitelist Sitelist ) {
 	gcd, gpd := newDefaultGarieConfig(cron)
 	for _, s := range sitelist {
 		var u GarieUrl
-		u.Url = s.WebSiteName
+		u.Url = "http://" + s.WebSiteName
 		u.Plugins = gpd
 		gu = append(gu,u)
 	}
