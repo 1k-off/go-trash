@@ -1,3 +1,0 @@
-ucc_url: "https://ucc.domain.tld"
-ucc_token: "some$eCr3tString"
-cron_string: "0 1 * * *"
