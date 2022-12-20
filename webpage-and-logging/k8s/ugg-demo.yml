@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ugg-demo
+spec:
+  selector:
+    app: ugg-demo
+  ports:
+    - port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ugg-demo
+  labels:
+    app: ugg-demo
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 50%
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: ugg-demo
+  template:
+    metadata:
+      labels:
+        app: ugg-demo
+    spec:
+      containers:
+        - name: ugg-demo
+          image: uggdemo.azurecr.io/ugg-demo-service:latest
+          ports:
+            - containerPort: 8080
+      imagePullSecrets:
+        - name: docker-registry-main
+      restartPolicy: Always
